@@ -1,0 +1,158 @@
+#!/bin/bash
+
+proxy() {
+  local __usage="
+Usage: proxy [Options] [Commands]
+
+Options:
+  -h, --help    Show this help message and exit
+  -i, --ip      Set the host IP, default:
+                - 127.0.0.1 (Linux/MacOS)
+                - windows IP (WSL)
+  -p, --port    Set the host port, default:
+                - 10809 (HTTP)
+                - 10808 (SOCKS)
+  -s, --socks   Use SOCKS proxy instead of HTTP proxy
+
+Commands:
+  set           Set proxy
+  unset         Unset proxy
+  status        Show proxy status
+"
+
+  local IN_WSL=false
+  local HOST_IP="${HOST_IP:-127.0.0.1}"
+
+  # Check if running in WSL, ref: https://stackoverflow.com/a/61014411
+  if [ "$(uname -r | sed -n 's/.*\( *Microsoft *\).*/\1/ip')" ]; then
+    # In WSL
+    IN_WSL=true
+    HOST_IP="$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')"
+  fi
+
+  local PORT_HTTP="${PORT_HTTP:-10809}"
+  local PORT_SOCKS="${PORT_SOCKS:-10808}"
+
+  local PROXY_OVER_SOCKS=false
+
+  try_set_proxy_git() {
+    if command_exists git; then
+      git config --global http.proxy "$PROXY"
+      git config --global https.proxy "$PROXY"
+    fi
+  }
+
+  try_unset_proxy_git() {
+    if command_exists git; then
+      git config --global --unset http.proxy
+      git config --global --unset https.proxy
+    fi
+  }
+
+  set_proxy_http() {
+    export http_proxy="$PROXY"
+    export HTTP_PROXY="$PROXY"
+
+    export https_proxy="$PROXY"
+    export HTTPS_PROXY="$PROXY"
+
+    try_set_proxy_git
+  }
+
+  set_proxy_sock() {
+    export http_proxy="$PROXY"
+    export HTTP_PROXY="$PROXY"
+
+    export https_proxy="$PROXY"
+    export HTTPS_PROXY="$PROXY"
+
+    try_set_proxy_git
+  }
+
+  unset_proxy() {
+    unset http_proxy
+    unset HTTP_PROXY
+
+    unset https_proxy
+    unset HTTPS_PROXY
+
+    try_unset_proxy_git
+  }
+
+  status() {
+    if $IN_WSL; then
+      wslip=$(hostname -I)
+      echo "Host IP: $HOST_IP (WSL IP: $wslip)"
+      echo "Proxy:" $HTTP_PROXY
+    else
+      echo "Proxy:" $HTTP_PROXY
+    fi
+  }
+
+  local COMMAND=""
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h | --help | help)
+      echo "$__usage"
+      return 0
+      ;;
+    -i | --ip)
+      HOST_IP="$2"
+      shift
+      shift
+      ;;
+    -p | --port)
+      PORT_HTTP="$2"
+      PORT_SOCKS="$2"
+      shift
+      shift
+      ;;
+    -s | --socks)
+      PROXY_OVER_SOCKS=true
+      shift
+      ;;
+    set)
+      COMMAND="set"
+      shift
+      ;;
+    unset)
+      COMMAND="unset"
+      shift
+      ;;
+    status)
+      COMMAND="status"
+      shift
+      ;;
+    --* | -*)
+      echo "[ERROR] Unknown option: $1"
+      echo "$__usage"
+      return 1
+      ;;
+    *)
+      echo "[ERROR] Unknown command: $*"
+      echo "$__usage"
+      return 1
+      ;;
+    esac
+  done
+
+  case $COMMAND in
+  set)
+    if $PROXY_OVER_SOCKS; then
+      local PROXY="socks5://$HOST_IP:$PORT_SOCKS"
+      set_proxy_sock
+    else
+      local PROXY="http://$HOST_IP:$PORT_HTTP"
+      set_proxy_http
+    fi
+    ;;
+  unset)
+    unset_proxy
+    ;;
+  status)
+    status
+    ;;
+  esac
+}
