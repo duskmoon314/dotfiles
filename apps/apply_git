@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -o pipefail
+
+DIR=$(dirname "$0")
+. "$DIR/../utils"
+
+if ! command_exists zsh; then
+  install_app zsh
+fi
+
+ln -snf "$DIR/git/.gitconfig" "$HOME/.gitconfig"
