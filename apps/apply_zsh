@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -o pipefail
+
+DIR=$(dirname "$0")
+. "$DIR/../utils"
+
+if ! command_exists zsh; then
+  install_app zsh
+fi
+
+chsh -s "$(which zsh)" "$(whoami)"
+
+# Link zsh files
+ln -snf "$DIR/zsh/.zprofile" "$HOME/.zprofile"
+ln -snf "$DIR/zsh/.zshrc" "$HOME/.zshrc"
+ln -snf "$DIR/zsh/.zshenv" "$HOME/.zshenv"
+ln -snf "$DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+
+# Install oh-my-zsh if not exists
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  if ! command_exists curl; then
+    install_app curl
+  fi
+
+  curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh |
+    KEEP_ZSHRC=yes sh
+fi
+
+# Clone powerlevel10k if not exists
+if [ ! -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]; then
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+fi
+
+# Clone zsh-autosuggestions if not exists
+if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
+  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+fi
+
+# Clone zsh-syntax-highlighting if not exists
+if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
+  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+fi
