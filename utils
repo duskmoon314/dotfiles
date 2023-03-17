@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Execute as root
+as_root() {
+  local shell_cmd
+  local cmd
+  local user
+  cmd=("$@")
+  shell_cmd='bash -c'
+  user="$(whoami)"
+
+  if [ "$user" != 'root' ]; then
+    shell_cmd='sudo -E bash -c'
+  fi
+  printf -v cmd_str "%q " "${cmd[@]}"
+  $shell_cmd "$cmd_str"
+}
+
+# Test whether a command exists
+command_exists() {
+  command -v "$@" >/dev/null 2>&1
+}
+
+# Install apps
+install_app() {
+  if command_exists brew; then
+    # Use brew on macOS
+    brew install "$@"
+  elif command_exists apt; then
+    # Use apt on Debian/Ubuntu
+    as_root apt install -y --no-install-recommends "$@"
+  else
+    echo "[ERROR] Unknown package manager"
+    return 1
+  fi
+}

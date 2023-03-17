@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -o pipefail
+
+# This script is the entrypoint of all dotfiles
+main() {
+  local __usage="
+Usage: [source] main [Options] [Commands]
+
+Options:
+  -h, --help    Show this help message and exit
+
+Commands:
+  set [apps]           Set apps (May need to enter password to use sudo)
+                        - zsh (omz, p10k, autosuggestions, syntax-highlighting)
+                        - git
+  set_cmd [cmds]   Set command (Should be called via source)
+                        - proxy
+"
+
+  # Load utils, ref: https://stackoverflow.com/a/12694189
+  local DIR
+  DIR=$(dirname "$0")
+  # shellcheck source=/dev/null
+  . "$DIR/utils"
+
+  set_apps() {
+    echo "setting apps:" "$@"
+
+    for app in "$@"; do
+      /bin/bash "$DIR/apps/apply_$app"
+    done
+  }
+
+  set_cmds() {
+    echo "setting commands:" "$@"
+
+    for command in "$@"; do
+      # shellcheck source=/dev/null
+      . "$DIR/commands/$command" || true
+    done
+  }
+
+  local ARGS=()
+  local COMMAND=""
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h | --help | help)
+      echo "$__usage"
+      return 0
+      ;;
+    set)
+      COMMAND="$1"
+      shift
+      ;;
+    set_cmd)
+      COMMAND="$1"
+      shift
+      ;;
+    --* | -*)
+      echo "[ERROR] Unknown option: $1"
+      echo "$__usage"
+      return 1
+      ;;
+    *)
+      ARGS+=("$1")
+      shift
+      ;;
+    esac
+  done
+
+  set -- "${ARGS[@]}"
+
+  case $COMMAND in
+  set)
+    set_apps "$@"
+    ;;
+  set_cmd)
+    set_cmds "$@"
+    ;;
+  *)
+    echo "[ERROR] Unknown command: $*"
+    echo "$__usage"
+    return 1
+    ;;
+  esac
+}
+
+main "$@"
