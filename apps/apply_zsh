@@ -2,8 +2,19 @@
 
 set -o pipefail
 
-DIR=$(dirname "$0")
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
 . "$DIR/../utils"
+
+# Check git, if not exists, exec apply_git
+if ! command_exists git; then
+  /bin/bash "$DIR/apply_git"
+fi
+
+: "${MIRROR:=false}"
 
 if ! command_exists zsh; then
   install_app zsh
@@ -23,21 +34,38 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     install_app curl
   fi
 
-  curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh |
-    KEEP_ZSHRC=yes sh
+  if $MIRROR; then
+    curl -fsSL https://git.duskmoon314.com/mirrors/ohmyzsh/raw/branch/master/tools/install.sh |
+      REMOTE=https://git.duskmoon314.com/mirrors/ohmyzsh.git KEEP_ZSHRC=yes sh
+  else
+    curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh |
+      KEEP_ZSHRC=yes sh
+  fi
 fi
 
 # Clone powerlevel10k if not exists
 if [ ! -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]; then
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+  if $MIRROR; then
+    git clone --depth=1 https://gitee.com/romkatv/powerlevel10k.git "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+  else
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+  fi
 fi
 
 # Clone zsh-autosuggestions if not exists
 if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
-  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+  if $MIRROR; then
+    git clone --depth=1 https://git.duskmoon314.com/mirrors/zsh-autosuggestions.git "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+  else
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+  fi
 fi
 
 # Clone zsh-syntax-highlighting if not exists
 if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
-  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+  if $MIRROR; then
+    git clone --depth=1 https://git.duskmoon314.com/mirrors/zsh-syntax-highlighting.git "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+  else
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+  fi
 fi
