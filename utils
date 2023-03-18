@@ -28,9 +28,25 @@ install_app() {
     brew install "$@"
   elif command_exists apt; then
     # Use apt on Debian/Ubuntu
-    as_root apt install -y --no-install-recommends "$@"
+    as_root apt update -qq
+    as_root apt install -qq -y --no-install-recommends "$@"
   else
     echo "[ERROR] Unknown package manager"
     return 1
   fi
+}
+
+# Set env to ._shrc
+set_env_to_shrc() {
+  local env_name
+  local env_value
+  env_name="$1"
+  env_value="$2"
+
+  # Get shrc of default shell
+  local shrc
+  shrc="$HOME/.$(basename "$SHELL")rc"
+
+  # Append to shrc if not exists
+  grep -q -F "export $env_name=$env_value" "$shrc" || echo "export $env_name=$env_value" >>"$shrc"
 }
