@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+echo "Pleas make sure public keys are added"
+
+# Install SSH server
+if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release; then
+  if ! command_exists sshd; then
+    install_app openssh-server
+  fi
+else
+  echo "Unsupported OS"
+  exit 1
+fi
+
+# Configure SSH server
+{
+  echo "PasswordAuthentication no"
+  echo "AuthenticationMethods publickey"
+  echo "PermitRootLogin prohibit-password"
+} >>/etc/ssh/sshd_config
+
+# Restart SSH server
+if command_exists systemctl; then
+  as_root systemctl restart sshd.service
+elif command_exists service; then
+  as_root service ssh restart
+else
+  echo "Failed to restart SSH server"
+  exit 1
+fi

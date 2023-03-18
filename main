@@ -16,6 +16,7 @@ Commands:
                     - git (link config)
                     - rust (mirror)
                       - See apply_rust for more details
+                    - sshd (disable pwd)
                     - zsh (omz, p10k, autosuggestions, syntax-highlighting)
   set_cmd [cmds]   Set command (Should be called via source)
                     - proxy
