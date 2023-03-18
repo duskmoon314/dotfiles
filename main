@@ -28,7 +28,7 @@ Commands:
     echo "setting apps:" "$@"
 
     for app in "$@"; do
-      /bin/bash "$DIR/apps/apply_$app"
+      MIRROR=$MIRROR /bin/bash "$DIR/apps/apply_$app"
     done
   }
 
@@ -43,6 +43,7 @@ Commands:
 
   local ARGS=()
   local COMMAND=""
+  local MIRROR=false
 
   # Parse arguments
   while [[ $# -gt 0 ]]; do
@@ -50,6 +51,10 @@ Commands:
     -h | --help | help)
       echo "$__usage"
       return 0
+      ;;
+    -m | --mirror)
+      MIRROR=true
+      shift
       ;;
     set)
       COMMAND="$1"
