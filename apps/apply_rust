@@ -1,0 +1,81 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+: "${RUST_SYSTEM_WIDE:=false}"
+: "${RUSTUP_DEFAULT_TOOLCHAIN:=stable}"
+: "${RUSTUP_PROFILE:=default}"
+
+: "${MIRROR:=false}"
+: "${CRATESIO_MIRROR:=rsproxy}"
+: "${CRATESIO_MIRROR_SPARSE:=true}"
+: "${RUSTUP_MIRROR:=rsproxy}"
+
+# Install curl if not exists
+if ! command_exists curl; then
+  install_app curl
+fi
+
+if $MIRROR; then
+  case "$RUSTUP_MIRROR" in
+  rsproxy)
+    export RUSTUP_DIST_SERVER="https://rsproxy.cn"
+    export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"
+    set_env_to_shrc "RUSTUP_DIST_SERVER" "$RUSTUP_DIST_SERVER"
+    set_env_to_shrc "RUSTUP_UPDATE_ROOT" "$RUSTUP_UPDATE_ROOT"
+    ;;
+  tuna)
+    export RUSTUP_DIST_SERVER="https://mirrors.tuna.tsinghua.edu.cn/rustup"
+    export RUSTUP_UPDATE_ROOT="https://mirrors.tuna.tsinghua.edu.cn/rustup/rustup"
+    set_env_to_shrc "RUSTUP_DIST_SERVER" "$RUSTUP_DIST_SERVER"
+    set_env_to_shrc "RUSTUP_UPDATE_ROOT" "$RUSTUP_UPDATE_ROOT"
+    ;;
+  *)
+    echo "Unsupported RUSTUP_MIRROR: $RUSTUP_MIRROR"
+    exit 1
+    ;;
+  esac
+fi
+
+if $RUST_SYSTEM_WIDE; then
+  # Install rustup system-wide, ref: https://github.com/rust-lang/rustup/issues/1085#issuecomment-296604244
+  export CARGO_HOME=/opt/cargo
+  export RUSTUP_HOME=/opt/rustup
+  curl -sSf https://sh.rustup.rs |
+    sh -s -- -y --no-modify-path --default-toolchain "$RUSTUP_DEFAULT_TOOLCHAIN" --profile "$RUSTUP_PROFILE"
+else
+  curl -sSf https://sh.rustup.rs |
+    sh -s -- -y --default-toolchain "$RUSTUP_DEFAULT_TOOLCHAIN" --profile "$RUSTUP_PROFILE"
+
+  export CARGO_HOME="$HOME/.cargo"
+fi
+
+# Link cargo config
+ln -snf "$DIR/cargo/config.toml" "$CARGO_HOME/config.toml"
+
+# Edit cargo config if mirror is enabled
+case "$CRATESIO_MIRROR" in
+rsproxy)
+  echo -e "\n[source.crates-io]" >>"$CARGO_HOME/config.toml"
+  $CRATESIO_MIRROR_SPARSE &&
+    echo "replace-with = 'rsproxy-sparse'" >>"$CARGO_HOME/config.toml" ||
+    echo "replace-with = 'rsproxy'" >>"$CARGO_HOME/config.toml"
+  ;;
+tuna)
+  echo -e "\n[source.crates-io]" >>"$CARGO_HOME/config.toml"
+  $CRATESIO_MIRROR_SPARSE &&
+    echo "replace-with = 'tuna-sparse'" >>"$CARGO_HOME/config.toml" ||
+    echo "replace-with = 'tuna'" >>"$CARGO_HOME/config.toml"
+  ;;
+*)
+  echo "Unsupported CRATESIO_MIRROR: $CRATESIO_MIRROR"
+  exit 1
+  ;;
+esac
