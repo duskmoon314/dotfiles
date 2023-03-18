@@ -50,6 +50,7 @@ if $RUST_SYSTEM_WIDE; then
   export RUSTUP_HOME=/opt/rustup
   curl -sSf https://sh.rustup.rs |
     sh -s -- -y --no-modify-path --default-toolchain "$RUSTUP_DEFAULT_TOOLCHAIN" --profile "$RUSTUP_PROFILE"
+  try_nonroot_first chmod -R a+w "$RUSTUP_HOME" "$CARGO_HOME"
 else
   curl -sSf https://sh.rustup.rs |
     sh -s -- -y --default-toolchain "$RUSTUP_DEFAULT_TOOLCHAIN" --profile "$RUSTUP_PROFILE"

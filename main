@@ -11,11 +11,14 @@ Options:
   -h, --help    Show this help message and exit
 
 Commands:
-  set [apps]           Set apps (May need to enter password to use sudo)
-                        - zsh (omz, p10k, autosuggestions, syntax-highlighting)
-                        - git
+  set [apps]       Set apps (May need to enter password to use sudo)
+                    - apt (mirror)
+                    - git (link config)
+                    - rust (mirror)
+                      - See apply_rust for more details
+                    - zsh (omz, p10k, autosuggestions, syntax-highlighting)
   set_cmd [cmds]   Set command (Should be called via source)
-                        - proxy
+                    - proxy
 "
 
   # Load utils, ref: https://stackoverflow.com/a/12694189
