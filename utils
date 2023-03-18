@@ -41,8 +41,9 @@ install_app() {
   if command_exists brew; then
     # Use brew on macOS
     brew install "$@"
-  elif command_exists apt; then
+  elif grep -q 'Debian\|Ubuntu' /etc/os-release; then
     # Use apt on Debian/Ubuntu
+    # MacOS seems to have apt but it's not the same
     as_root apt update -qq
     as_root apt install -qq -y --no-install-recommends "$@"
   else
@@ -63,5 +64,22 @@ set_env_to_shrc() {
   shrc="$HOME/.$(basename "$SHELL")rc"
 
   # Append to shrc if not exists
-  grep -q -F "export $env_name=$env_value" "$shrc" || echo "export $env_name=$env_value" >>"$shrc"
+  grep -q -F "export $env_name=$env_value" "$shrc" ||
+    echo "export $env_name=$env_value" >>"$shrc"
+}
+
+# Set alias to ._shrc
+set_alias_to_shrc() {
+  local alias_name
+  local alias_value
+  alias_name="$1"
+  alias_value="$2"
+
+  # Get shrc of default shell
+  local shrc
+  shrc="$HOME/.$(basename "$SHELL")rc"
+
+  # Append to shrc if not exists
+  grep -q -F "alias $alias_name=\"$alias_value\"" "$shrc" ||
+    echo "alias $alias_name=\"$alias_value\"" >>"$shrc"
 }
