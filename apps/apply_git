@@ -2,11 +2,15 @@
 
 set -o pipefail
 
-DIR=$(dirname "$0")
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
 . "$DIR/../utils"
 
-if ! command_exists zsh; then
-  install_app zsh
+if ! command_exists git; then
+  install_app git
 fi
 
 ln -snf "$DIR/git/.gitconfig" "$HOME/.gitconfig"
