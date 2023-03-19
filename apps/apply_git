@@ -13,4 +13,7 @@ if ! command_exists git; then
   install_app git
 fi
 
+# Allow cloning over HTTPS
+install_app ca-certificates
+
 ln -snf "$DIR/git/.gitconfig" "$HOME/.gitconfig"
