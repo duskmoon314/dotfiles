@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+: "${REPLACE_WITH_MODERN_UNIX:=false}"
+
+if ! command_exists fd; then
+  # Install fd-find on Debian/Ubuntu
+  if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release; then
+    install_app fd-find
+  else
+    install_app fd
+  fi
+fi
+if $REPLACE_WITH_MODERN_UNIX; then
+  if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release; then
+    set_alias_to_shrc fd fd-find
+    set_alias_to_shrc find fd-find
+  else
+    set_alias_to_shrc find fd
+  fi
+fi
+
+# Note: May adding opinioned config here in the future

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+: "${REPLACE_WITH_MODERN_UNIX:=false}"
+
+if ! command_exists exa; then
+  install_app exa
+fi
+if $REPLACE_WITH_MODERN_UNIX; then
+  set_alias_to_shrc ls exa
+  set_alias_to_shrc ll 'exa -l'
+  set_alias_to_shrc la 'exa -la'
+fi
+
+# Note: May adding opinioned config here in the future

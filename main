@@ -14,6 +14,7 @@ Commands:
   set [apps]       Set apps (May need to enter password to use sudo)
                     - apt (mirror)
                     - git (link config)
+                    - modern_unix (bat, exa, fd, rg)
                     - rust (mirror)
                       - See apply_rust for more details
                     - sshd (disable pwd)
