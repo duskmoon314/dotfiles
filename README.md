@@ -14,6 +14,8 @@ Put the repo at `~/.dotfiles`, either by cloning or copying the files.
 ~/.dotfiles/main set zsh [other apps]
 ```
 
+In most cases, config files will be overwritten by symlinks to the repo.
+
 Setting `zsh` will install `zsh` and `oh-my-zsh` and set it as the default shell.
 This will also add an alias `dotfiles=$HOME/.dotfiles/main` to the shell.
 

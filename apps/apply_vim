@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+: "${INSTALL_NVIM:=true}"
+: "${INSTALL_NVIM_LATEST:=true}"
+
+if ! $INSTALL_NVIM; then
+  if ! command_exists vim; then
+    install_app vim
+  fi
+else
+  # Install neovim
+
+  if $INSTALL_NVIM_LATEST; then
+    # Download nvim-linux64.deb on Debian/Ubuntu x86_64
+    if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release && [ "$(uname -i)" = 'x86_64' ]; then
+      if command_exists wget; then
+        wget -O /tmp/nvim-linux64.deb https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.deb
+      elif command_exists curl; then
+        curl -fsSL https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.deb -o /tmp/nvim-linux64.deb
+      else
+        echo "Failed to find wget or curl to download nvim-linux64.deb"
+        exit 1
+      fi
+
+      as_root apt install -y /tmp/nvim-linux64.deb
+
+      rm -f /tmp/nvim-linux64.deb
+    else
+      echo "Unsupported OS or architecture"
+      exit 1
+    fi
+  else
+    if ! command_exists nvim; then
+      install_app neovim
+    fi
+  fi
+fi
+
+# Link vimrc
+ln -snf "$DIR/vim/.vimrc" "$HOME/.vimrc"
