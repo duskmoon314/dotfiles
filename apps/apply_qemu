@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Build QEMU from source
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+: "${QEMU_VERSION:=7.0.0}"
+: "${QEMU_CONFIGURE_OPTIONS:=--target-list=riscv64-softmmu,riscv64-linux-user}"
+
+# Install qemu dependencies
+if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release; then
+  install_app \
+    build-essential \
+    git \
+    wget \
+    libglib2.0-dev \
+    libfdt-dev \
+    libpixman-1-dev \
+    zlib1g-dev \
+    ninja-build
+# end of list
+else
+  echo "Unsupported OS"
+  exit 1
+fi
+
+# Get qemu source code
+wget https://download.qemu.org/qemu-"$QEMU_VERSION".tar.xz -O /tmp/qemu-"$QEMU_VERSION".tar.xz
+tar -xJf /tmp/qemu-"$QEMU_VERSION".tar.xz
+cd qemu-"$QEMU_VERSION"
+./configure "$QEMU_CONFIGURE_OPTIONS"
+make -j "$(nproc)"
+as_root make install
+cd -
+
+rm -rf qemu-"$QEMU_VERSION"
+rm -f /tmp/qemu-"$QEMU_VERSION".tar.xz
