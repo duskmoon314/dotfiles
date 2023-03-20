@@ -21,7 +21,7 @@ set_app_ubuntu() {
   isa=$(uname -i)
 
   if [ "$isa" = 'x86_64' ]; then
-    as_root cat <<EOF >/etc/apt/sources.list
+    as_root tee /etc/apt/sources.list <<EOF
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
@@ -29,7 +29,7 @@ deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME-security main
 # deb http://security.ubuntu.com/ubuntu $VERSION_CODENAME-security main restricted universe multiverse
 EOF
   else
-    as_root cat <<EOF >/etc/apt/sources.list
+    as_root tee /etc/apt/sources.list <<EOF
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME-updates main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME-backports main restricted universe multiverse
@@ -38,7 +38,7 @@ deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME-securit
 EOF
   fi
 
-  apt update -qq
+  as_root apt update -qq
 }
 
 # Install ca-certificates
