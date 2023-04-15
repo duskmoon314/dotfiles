@@ -22,11 +22,11 @@ else
 fi
 
 # Configure SSH server
-{
-  echo "PasswordAuthentication no"
-  echo "AuthenticationMethods publickey"
-  echo "PermitRootLogin prohibit-password"
-} >>/etc/ssh/sshd_config
+as_root tee -a /etc/ssh/sshd_config <<EOF
+PasswordAuthentication no
+AuthenticationMethods publickey
+PermitRootLogin prohibit-password
+EOF
 
 # Restart SSH server
 if command_exists systemctl; then
