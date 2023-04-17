@@ -20,24 +20,20 @@ else
   # Install neovim
 
   if $INSTALL_NVIM_LATEST; then
-    # Download nvim-linux64.deb on Debian/Ubuntu x86_64
-    if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release && [ "$(uname -i)" = 'x86_64' ]; then
-      if command_exists wget; then
-        wget -O /tmp/nvim-linux64.deb https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.deb
-      elif command_exists curl; then
-        curl -fsSL https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.deb -o /tmp/nvim-linux64.deb
-      else
-        echo "Failed to find wget or curl to download nvim-linux64.deb"
-        exit 1
-      fi
+    echo "Installing neovim appimage, please check FUSE support"
 
-      as_root apt install -y /tmp/nvim-linux64.deb
-
-      rm -f /tmp/nvim-linux64.deb
+    # Download nvim.appimage
+    if command_exists wget; then
+      wget -O /tmp/nvim.appimage https://github.com/neovim/neovim/releases/download/stable/nvim.appimage
+    elif command_exists curl; then
+      curl -fsSL https://github.com/neovim/neovim/releases/download/stable/nvim.appimage -o /tmp/nvim.appimage
     else
-      echo "Unsupported OS or architecture"
+      echo "Failed to find wget or curl to download nvim.appimage"
       exit 1
     fi
+
+    as_root chmod +x /tmp/nvim.appimage
+    as_root mv /tmp/nvim.appimage /usr/local/bin/nvim
   else
     if ! command_exists nvim; then
       install_app neovim
