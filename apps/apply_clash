@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+# Link service file
+as_root ln -snf "$DIR/clash/clash.service" "/etc/systemd/system/clash.service"
+
+# Link clash config
+as_root ln -snfT "$DIR/clash/config" "/etc/clash"
+
+# Disable resolved DNS
+as_root mkdir -p "/etc/systemd/resolved.conf.d"
+as_root cp -f "$DIR/clash/resolved-overwrite.conf" "/etc/systemd/resolved.conf.d/clash-resolved-overwrite.conf"
+
+# Overrite sysctl
+as_root ln -snf "$DIR/clash/sysctl-overwrite.conf" "/etc/sysctl.d/clash-sysctl-overwrite.conf"
