@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+# Get version from env NODE_EXPORTER_VERSION or use default 1.5.0
+: "${NODE_EXPORTER_VERSION:=1.5.0}"
+
+# Download and install node_exporter
+if !command_exists wget; then
+  echo "wget not found, please install wget first"
+  exit 1
+fi
+wget https://github.com/prometheus/node_exporter/releases/download/v${NODE_EXPORTER_VERSION}/node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz
+tar xfz node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz
+as_root cp node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter /usr/local/bin
+rm -rf node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64*
+
+# Link service file
+as_root ln -snf "$DIR/prometheus/node_exporter/node_exporter.service" "/etc/systemd/system/node_exporter.service"
