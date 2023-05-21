@@ -13,7 +13,7 @@ DIR="$(
 : "${NODE_EXPORTER_VERSION:=1.5.0}"
 
 # Download and install node_exporter
-if !command_exists wget; then
+if ! command_exists wget; then
   echo "wget not found, please install wget first"
   exit 1
 fi
