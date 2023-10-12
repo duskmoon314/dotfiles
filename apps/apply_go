@@ -40,3 +40,6 @@ esac
 # Download and install Go
 curl -sSL "https://go.dev/dl/${GO_VERSION}.${OS}-${ARCH}.tar.gz" -o go.tar.gz
 as_root tar -C /usr/local -xzf go.tar.gz
+
+# Cleanup
+rm go.tar.gz
