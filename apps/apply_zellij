@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR="$(
+  cd "$(dirname "$0")" || exit 1
+  pwd
+)"
+# shellcheck source=/dev/null
+. "$DIR/../utils"
+
+ARCH=$(uname -m)
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+# Download the latest release tarball
+if [ "$OS" = "darwin" ]; then
+  filename="zellij-${ARCH}-apple-darwin.tar.gz"
+  url="https://github.com/zellij-org/zellij/releases/latest/download/$filename"
+  echo "Downloading Zellij binary for macOS..."
+  curl -fsSLO "$url"
+elif [ "$OS" = "linux" ]; then
+  filename="zellij-${ARCH}-unknown-linux-musl.tar.gz"
+  url="https://github.com/zellij-org/zellij/releases/latest/download/$filename"
+  echo "Downloading Zellij binary for Linux..."
+  curl -fsSLO "$url"
+else
+  echo "Unsupported OS: $OS"
+  exit 1
+fi
+
+# Unpack the tarball
+echo "Unpacking Zellij binary..."
+tar -xzf "$filename"
+
+# Adding execute permission to the binary
+echo "Adding execute permission to Zellij binary..."
+chmod +x zellij
+
+# Move the binary to /usr/local/bin
+echo "Moving Zellij binary to /usr/local/bin..."
+as_root mv zellij /usr/local/bin
+
+# Cleanup
+echo "Cleaning up..."
+rm "$filename"
+
+# Check if the binary is available
+if command_exists zellij; then
+  echo "Zellij binary is available at /usr/local/bin/zellij"
+else
+  echo "Zellij binary is not available at /usr/local/bin/zellij"
+  exit 1
+fi
