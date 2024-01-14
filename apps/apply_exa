@@ -1,23 +1,29 @@
 #!/bin/bash
 
-set -euo pipefail
+apply_exa() {
+  echo "===== Apply exa ====="
 
-DIR="$(
-  cd "$(dirname "$0")" || exit 1
-  pwd
-)"
-# shellcheck source=/dev/null
-. "$DIR/../utils"
+  if ! command_exists exa; then
+    INFO "Installing exa..."
 
-: "${REPLACE_WITH_MODERN_UNIX:=false}"
+    if [ $ROOT_USER = 0 ]; then
+      install_app exa
+    else
+      # TODO: Install exa without root
+      WARN "Unsupported yet: Install exa without root"
+      return 1
+    fi
+  fi
 
-if ! command_exists exa; then
-  install_app exa
-fi
-if $REPLACE_WITH_MODERN_UNIX; then
-  set_alias_to_shrc ls exa
-  set_alias_to_shrc ll 'exa -l'
-  set_alias_to_shrc la 'exa -la'
-fi
+  INFO "Installing exa: Done"
 
-# Note: May adding opinioned config here in the future
+  if $REPLACE_LINUX_COMMON; then
+    set_alias_to_shrc ls exa
+    set_alias_to_shrc ll 'exa -l'
+    set_alias_to_shrc la 'exa -la'
+  fi
+
+  INFO "Apply exa: Done"
+}
+
+apply_exa

@@ -27,33 +27,42 @@ Commands:
 
   # Load utils, ref: https://stackoverflow.com/a/12694189
   local DIR
-  DIR="$(
-    cd "$(dirname "$0")" || exit 1
-    pwd
-  )"
+  if [ -n "$DOTFILES_DIR" ]; then
+    DIR="$DOTFILES_DIR"
+  else
+    DIR="$(
+      cd "$(dirname "$0")" || exit 1
+      pwd
+    )"
+  fi
   # shellcheck source=/dev/null
   . "$DIR/utils"
 
   set_apps() {
-    echo "setting apps:" "$@"
+    INFO "setting apps: $*"
 
     for app in "$@"; do
-      MIRROR=$MIRROR /bin/bash "$DIR/apps/apply_$app"
+      # shellcheck source=/dev/null
+      . "$DIR/apps/apply_$app"
     done
   }
 
   set_cmds() {
-    echo "setting commands:" "$@"
+    INFO "setting commands: $*"
 
     for command in "$@"; do
       # shellcheck source=/dev/null
-      . "$HOME/.dotfiles/commands/$command" || true
+      . "$DIR/commands/$command"
     done
   }
 
   local ARGS=()
   local COMMAND=""
-  local MIRROR=false
+  local ROOT_USER=255
+  local REPLACE_LINUX_COMMON=false
+  local RESTART_SERVICE=false
+  local LOG_COLOR=true
+  # local MIRROR=false
 
   # Parse arguments
   while [[ $# -gt 0 ]]; do
@@ -62,8 +71,26 @@ Commands:
       echo "$__usage"
       return 0
       ;;
-    -m | --mirror)
-      MIRROR=true
+    # -m | --mirror)
+    #   MIRROR=true
+    #   shift
+    #   ;;
+    -u)
+      ROOT_USER=1
+      shift
+      ;;
+    -r)
+      REPLACE_LINUX_COMMON=true
+      shift
+      ;;
+    -c)
+      # shift
+      if [[ "$2" == "true" ]]; then
+        LOG_COLOR=true
+      else
+        LOG_COLOR=false
+      fi
+      shift
       shift
       ;;
     set)
@@ -75,7 +102,7 @@ Commands:
       shift
       ;;
     --* | -*)
-      echo "[ERROR] Unknown option: $1"
+      ERROR "Unknown option: $1"
       echo "$__usage"
       return 1
       ;;
@@ -86,21 +113,41 @@ Commands:
     esac
   done
 
-  set -- "${ARGS[@]}"
+  if $LOG_COLOR; then
+    INFO "Log color is enabled"
+  fi
+
+  check_os
+
+  if [[ $ROOT_USER == 255 ]]; then
+    check_root
+    ROOT_USER=$?
+  fi
+
+  if $REPLACE_LINUX_COMMON; then
+    INFO ".dotfiles will replace linux common utils"
+  fi
+
+  if $RESTART_SERVICE; then
+    INFO "Corresponding services will be restarted"
+  fi
 
   case $COMMAND in
   set)
-    set_apps "$@"
+    set_apps "${ARGS[*]}"
     ;;
   set_cmd)
-    set_cmds "$@"
+    set_cmds "${ARGS[*]}"
+    return 0
     ;;
   *)
-    echo "[ERROR] Unknown command: $*"
+    ERROR "Unknown command: $*"
     echo "$__usage"
     return 1
     ;;
   esac
+
+  return 0
 }
 
 main "$@"

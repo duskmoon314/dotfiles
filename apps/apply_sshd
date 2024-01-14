@@ -1,39 +1,55 @@
 #!/bin/bash
 
-set -euo pipefail
+apply_sshd() {
+  echo "===== Apply sshd ====="
+  echo "Pleas make sure public keys are added"
 
-DIR="$(
-  cd "$(dirname "$0")" || exit 1
-  pwd
-)"
-# shellcheck source=/dev/null
-. "$DIR/../utils"
-
-echo "Pleas make sure public keys are added"
-
-# Install SSH server
-if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release; then
   if ! command_exists sshd; then
-    install_app openssh-server
-  fi
-else
-  echo "Unsupported OS"
-  exit 1
-fi
+    INFO "Installing sshd..."
 
-# Configure SSH server
-as_root tee -a /etc/ssh/sshd_config <<EOF
+    if [ "$ROOT_USER" = 0 ]; then
+      case $OS in
+      Debian | Ubuntu)
+        install_app openssh-server
+        ;;
+      *)
+        WARN "Unsupported OS"
+        return 1
+        ;;
+      esac
+    else
+      # TODO: Install sshd for non-root user
+      WARN "Unsupported yet: Install sshd for non-root user"
+      return 1
+    fi
+  fi
+
+  INFO "Configuring sshd..."
+  INFO "Password Authentication will be disabled"
+
+  if [ "$ROOT_USER" = 0 ]; then
+    as_root tee -a /etc/ssh/sshd_config <<EOF
 PasswordAuthentication no
 AuthenticationMethods publickey
 PermitRootLogin prohibit-password
 EOF
+    as_root mkdir -p /run/sshd
+  else
+    # TODO
+    WARN "Unsupported yet: Configure sshd for non-root user"
+  fi
 
-# Restart SSH server
-if command_exists systemctl; then
-  as_root systemctl restart sshd.service
-elif command_exists service; then
-  as_root service ssh restart
-else
-  echo "Failed to restart SSH server"
-  exit 1
-fi
+  if $RESTART_SERVICE; then
+    INFO "Restarting sshd..."
+    if command_exists systemctl; then
+      as_root systemctl restart sshd.service
+    elif command_exists service; then
+      as_root service ssh restart
+    else
+      ERROR "Unknown service manager"
+      exit 1
+    fi
+  fi
+}
+
+apply_sshd

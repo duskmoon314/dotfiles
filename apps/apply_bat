@@ -1,26 +1,76 @@
 #!/bin/bash
 
-set -euo pipefail
+apply_bat() {
+  echo "===== Apply bat ====="
 
-DIR="$(
-  cd "$(dirname "$0")" || exit 1
-  pwd
-)"
-# shellcheck source=/dev/null
-. "$DIR/../utils"
+  if ! command_exists bat && ! command_exists batcat; then
+    INFO "Installing bat..."
 
-: "${REPLACE_WITH_MODERN_UNIX:=false}"
+    if [ $ROOT_USER = 0 ]; then
+      install_app bat
+    else
+      # Non-root user and can't use sudo/su
+      INFO "Installing bat from binaries..."
 
-if ! command_exists bat; then
-  install_app bat
-fi
-if $REPLACE_WITH_MODERN_UNIX; then
-  if [ -f "/etc/os-release" ] && grep -q 'Debian\|Ubuntu' /etc/os-release; then
-    set_alias_to_shrc bat batcat
-    set_alias_to_shrc cat batcat
-  else
-    set_alias_to_shrc cat bat
+      # Test if curl exists
+      if ! command_exists curl; then
+        install_app curl
+      fi
+
+      # Test if jq exists
+      if ! command_exists jq; then
+        install_app jq
+      fi
+
+      # Get the latest release
+      local latest_version
+      latest_version=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | jq -r '.name')
+
+      local file_url
+      file_url="https://github.com/sharkdp/bat/releases/latest/download/bat-${latest_version}-${ARCH}-unknown-linux-musl.tar.gz"
+      local file_name
+      file_name="bat-${latest_version}-${ARCH}-unknown-linux-musl"
+
+      INFO "Downloading ${file_name}..."
+      curl -fsSLO "$file_url"
+
+      INFO "Extracting ${file_name}..."
+      tar -xzf "$file_name.tar.gz"
+
+      INFO "Installing ${file_name}..."
+      chmod +x "${file_name}/bat"
+      # Create $HOME/.local/bin if not exists
+      mkdir -p "$HOME/.local/bin"
+      mv "${file_name}/bat" "$HOME/.local/bin"
+      rm -rf "${file_name}"
+      rm -rf "$file_name.tar.gz"
+
+      INFO "bat is installed at $HOME/.local/bin/bat"
+    fi
   fi
-fi
 
-# Note: May adding opinioned config here in the future
+  INFO "Installing bat: Done"
+
+  if $REPLACE_LINUX_COMMON; then
+    case $OS in
+    Ubuntu | Debian)
+      if [ $ROOT_USER = 0 ]; then
+        set_alias_to_shrc bat batcat
+        set_alias_to_shrc cat batcat
+      else
+        set_alias_to_shrc cat bat
+      fi
+      ;;
+    *)
+      set_alias_to_shrc cat bat
+      ;;
+    esac
+    INFO "Setting bat as cat: Done"
+  fi
+
+  # Note: May adding opinioned config here in the future
+
+  INFO "Apply bat: Done"
+}
+
+apply_bat

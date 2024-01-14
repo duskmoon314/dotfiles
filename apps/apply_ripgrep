@@ -1,21 +1,23 @@
 #!/bin/bash
 
-set -euo pipefail
+apply_ripgrep() {
+  if ! command_exists rg; then
+    INFO "Installing ripgrep..."
 
-DIR="$(
-  cd "$(dirname "$0")" || exit 1
-  pwd
-)"
-# shellcheck source=/dev/null
-. "$DIR/../utils"
+    if [ $ROOT_USER = 0 ]; then
+      install_app ripgrep
+    else
+      # TODO: Install ripgrep without root
+      WARN "Unsupported yet: Install ripgrep without root"
+      return 1
+    fi
+  fi
 
-: "${REPLACE_WITH_MODERN_UNIX:=false}"
+  INFO "Installing ripgrep: Done"
 
-if ! command_exists rg; then
-  install_app ripgrep
-fi
-if $REPLACE_WITH_MODERN_UNIX; then
-  set_alias_to_shrc grep rg
-fi
+  if $REPLACE_LINUX_COMMON; then
+    set_alias_to_shrc grep rg
+  fi
+}
 
-# Note: May adding opinioned config here in the future
+apply_ripgrep

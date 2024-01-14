@@ -1,13 +1,19 @@
 #!/bin/bash
 
-set -o pipefail
+apply_git() {
+  echo "===== Apply git ===="
 
-DIR="$(
-  cd "$(dirname "$0")" || exit 1
-  pwd
-)"
-# shellcheck source=/dev/null
-. "$DIR/../utils"
+  if ! command_exists git; then
+    echo "Installing git"
+
+    if [ $ROOT_USER = 0 ]; then
+      install_app git
+    else
+      # TODO: Install git without root
+      WARN "What a nightmare! Install git without root is not supported yet."
+    fi
+  fi
+}
 
 if ! command_exists git; then
   install_app git

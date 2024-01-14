@@ -1,27 +1,80 @@
 #!/bin/bash
 
+# check whether a string is contained in a list
+#
+# ref: https://stackoverflow.com/a/8063398
+contains() {
+  [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && return 0 || return 1
+}
+
+# Check whether the user can execute as root
+#
+# Returns:
+#   - 0 if the user is root
+#       if the user can execute sudo (also means sudo exists)
+#       if the user confirm he/she knows passwd of root (exec su later)
+#   - 1 if the user cannot execute sudo or su
+check_root() {
+  INFO "Checking whether the user can execute as root"
+
+  local groups
+  groups="$(groups)"
+
+  SHELL_CMD='bash -c'
+
+  if contains "$groups" 'root'; then
+    return 0
+  elif command_exists sudo && (contains "$groups" 'sudo' || contains "$groups" 'adm'); then
+    SHELL_CMD='sudo -E bash -c'
+    return 0
+  elif command_exists su; then
+    # Ask the user to confirm he/she knows passwd of root
+    echo "Can you execute su? (y/n)"
+
+    local answer
+    read -r answer
+
+    if [ "$answer" = 'y' ]; then
+      # shellcheck disable=SC2034
+      SHELL_CMD='su -c'
+      return 0
+    else
+      return 1
+    fi
+  else
+    return 1
+  fi
+}
+
+# Get OS metadata
+check_os() {
+  if [ -f /etc/os-release ]; then
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    OS="$NAME"
+    OS_VERSION="$VERSION_ID"
+  else
+    OS="$(uname -s)"
+    OS_VERSION="$(uname -r)"
+  fi
+
+  ARCH="$(uname -m)"
+
+  INFO "OS: $OS $OS_VERSION $ARCH"
+}
+
 # Execute as root
 as_root() {
-  local shell_cmd
   local cmd
-  local user
   cmd=("$@")
-  shell_cmd='bash -c'
-  user="$(whoami)"
 
-  if [ "$user" != 'root' ]; then
-    # shell_cmd='sudo -E bash -c'
-    if command_exists sudo; then
-      shell_cmd='sudo -E bash -c'
-    elif command_exists su; then
-      shell_cmd='su -c'
-    else
-      echo "[ERROR] Needs root. No sudo or su found"
-      exit 1
-    fi
+  if [ $ROOT_USER = 1 ]; then
+    ERROR "Needs root. No sudo or su found"
+    exit 1
   fi
+
   printf -v cmd_str "%q " "${cmd[@]}"
-  $shell_cmd "$cmd_str"
+  $SHELL_CMD "$cmd_str"
 }
 
 try_nonroot_first() {
@@ -36,20 +89,18 @@ command_exists() {
   command -v "$@" >/dev/null 2>&1
 }
 
-# Install apps
+# Install apps using package manager
 install_app() {
-  if command_exists brew; then
-    # Use brew on macOS
-    brew install "$@"
-  elif grep -q 'Debian\|Ubuntu' /etc/os-release; then
-    # Use apt on Debian/Ubuntu
-    # MacOS seems to have apt but it's not the same
+  case $OS in
+  Ubuntu | Debian)
     as_root apt update -qq
     as_root apt install -qq -y --no-install-recommends "$@"
-  else
-    echo "[ERROR] Unknown package manager"
+    ;;
+  *)
+    ERROR "Unsupported OS"
     return 1
-  fi
+    ;;
+  esac
 }
 
 # Set env to ._shrc
@@ -82,4 +133,46 @@ set_alias_to_shrc() {
   # Append to shrc if not exists
   grep -q -F "alias $alias_name=\"$alias_value\"" "$shrc" ||
     echo "alias $alias_name=\"$alias_value\"" >>"$shrc"
+}
+
+# Log INFO
+#
+# echo string to stdout
+# if $LOG_COLOR is true, echo with green color
+INFO() {
+  local msg
+  msg="$1"
+  if $LOG_COLOR; then
+    echo -e "\033[32m[INFO] $msg\033[0m"
+  else
+    echo "[INFO] $msg"
+  fi
+}
+
+# Log WARN
+#
+# echo string to stdout
+# if $LOG_COLOR is true, echo with yellow color
+WARN() {
+  local msg
+  msg="$1"
+  if $LOG_COLOR; then
+    echo -e "\033[33m[WARN] $msg\033[0m"
+  else
+    echo "[WARN] $msg"
+  fi
+}
+
+# Log ERROR
+#
+# echo string to stderr
+# if $LOG_COLOR is true, echo with red color
+ERROR() {
+  local msg
+  msg="$1"
+  if $LOG_COLOR; then
+    echo -e "\033[31m[ERROR] $msg\033[0m" >&2
+  else
+    echo "[ERROR] $msg" >&2
+  fi
 }
