@@ -93,8 +93,8 @@ command_exists() {
 install_app() {
   case $OS in
   Ubuntu | Debian)
-    as_root apt update -qq
-    as_root apt install -qq -y --no-install-recommends "$@"
+    as_root apt-get update -qq
+    as_root apt-get install -qq -y --no-install-recommends "$@"
     ;;
   *)
     ERROR "Unsupported OS"
@@ -107,8 +107,8 @@ install_app() {
 clean_app() {
   case $OS in
   Debian | Ubuntu)
-    as_root apt autoremove --purge -y
-    as_root apt clean
+    as_root apt-get autoremove --purge -y
+    as_root apt-get clean
     as_root rm -rf /var/lib/apt/lists/*
     ;;
   *)
