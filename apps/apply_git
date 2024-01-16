@@ -7,19 +7,14 @@ apply_git() {
     echo "Installing git"
 
     if [ $ROOT_USER = 0 ]; then
-      install_app git
+      install_app ca-certificates git
     else
       # TODO: Install git without root
       WARN "What a nightmare! Install git without root is not supported yet."
     fi
   fi
+
+  ln -snf "$DIR/git/.gitconfig" "$HOME/.gitconfig"
 }
 
-if ! command_exists git; then
-  install_app git
-fi
-
-# Allow cloning over HTTPS
-install_app ca-certificates
-
-ln -snf "$DIR/git/.gitconfig" "$HOME/.gitconfig"
+apply_git
