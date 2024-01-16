@@ -103,6 +103,21 @@ install_app() {
   esac
 }
 
+# Clean after install
+clean_app() {
+  case $OS in
+  Debian | Ubuntu)
+    as_root apt autoremove --purge -y
+    as_root apt clean
+    as_root rm -rf /var/lib/apt/lists/*
+    ;;
+  *)
+    ERROR "Unsupported OS"
+    return 1
+    ;;
+  esac
+}
+
 # Set env to ._shrc
 set_env_to_shrc() {
   local env_name
