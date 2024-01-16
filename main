@@ -27,6 +27,7 @@ Commands:
 
   # Load utils, ref: https://stackoverflow.com/a/12694189
   local DIR
+  DOTFILES_DIR=${DOTFILES_DIR:-}
   if [ -n "$DOTFILES_DIR" ]; then
     DIR="$DOTFILES_DIR"
   else
@@ -41,7 +42,8 @@ Commands:
   set_apps() {
     INFO "setting apps: $*"
 
-    for app in "$@"; do
+    # shellcheck disable=SC2048
+    for app in $*; do
       # shellcheck source=/dev/null
       . "$DIR/apps/apply_$app"
     done
@@ -50,7 +52,8 @@ Commands:
   set_cmds() {
     INFO "setting commands: $*"
 
-    for command in "$@"; do
+    # shellcheck disable=SC2048
+    for command in $*; do
       # shellcheck source=/dev/null
       . "$DIR/commands/$command"
     done
@@ -81,6 +84,10 @@ Commands:
       ;;
     -r)
       REPLACE_LINUX_COMMON=true
+      shift
+      ;;
+    -s)
+      RESTART_SERVICE=true
       shift
       ;;
     -c)
