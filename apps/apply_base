@@ -1,0 +1,28 @@
+#!/bin/bash
+
+apply_base() {
+  echo "===== Apply base tools ====="
+  echo "These tools will be installed:"
+  echo "  - ca-certificates"
+  echo "  - git"
+  echo "  - curl"
+  echo "  - wget"
+  echo "  - ping"
+
+  if [ "$ROOT_USER" = 0 ]; then
+    case $OS in
+    Debian | Ubuntu)
+      install_app ca-certificates git curl wget inetutils-ping
+      ;;
+    *)
+      WARN "Unsupport OS"
+      return 1
+      ;;
+    esac
+  else
+    WARN "Unsupport non-root user"
+    return 1
+  fi
+}
+
+apply_base
