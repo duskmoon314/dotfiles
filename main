@@ -66,6 +66,7 @@ Commands:
   local RESTART_SERVICE=false
   local LOG_COLOR=true
   # local MIRROR=false
+  local CLEAN=false
 
   # Parse arguments
   while [[ $# -gt 0 ]]; do
@@ -98,6 +99,10 @@ Commands:
         LOG_COLOR=false
       fi
       shift
+      shift
+      ;;
+    -C)
+      CLEAN=true
       shift
       ;;
     set)
@@ -153,6 +158,11 @@ Commands:
     return 1
     ;;
   esac
+
+  if $CLEAN; then
+    INFO "Cleaning up"
+    clean_app
+  fi
 
   return 0
 }
