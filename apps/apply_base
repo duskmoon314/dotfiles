@@ -8,11 +8,12 @@ apply_base() {
   echo "  - curl"
   echo "  - wget"
   echo "  - ping"
+  echo "  - iproute2"
 
   if [ "$ROOT_USER" = 0 ]; then
     case $OS in
     Debian | Ubuntu)
-      install_app ca-certificates git curl wget inetutils-ping
+      install_app ca-certificates git curl wget iputils-ping iproute2
       ;;
     *)
       WARN "Unsupport OS"
