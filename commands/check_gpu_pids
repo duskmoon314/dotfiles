@@ -1,0 +1,44 @@
+#!/bin/bash
+
+check_gpu_pids() {
+  local __usage="
+Usage: check_gpu_pids [OPTIONS]
+"
+
+  if ! command_exists nvidia-smi; then
+    ERROR "nvidia-smi is not found"
+    return 1
+  fi
+
+  if ! command_exists docker; then
+    ERROR "docker is not found"
+    return 1
+  fi
+
+  local gpu_pids
+  gpu_pids=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader,nounits)
+
+  if [ -z "$gpu_pids" ]; then
+    INFO "No GPU processes are running"
+    return 0
+  fi
+
+  local container_ids
+  container_ids=$(docker ps --format '{{.ID}}')
+
+  for pid in $gpu_pids; do
+    local found_container
+
+    for container_id in $container_ids; do
+      if docker top "$container_id" | grep -q "$pid"; then
+        found_container=$(docker inspect --format '{{.Name}}' "$container_id" | cut -c2-)
+        INFO "PID $pid belongs to container $found_container"
+        break
+      fi
+    done
+
+    if [ -z "$found_container" ]; then
+      INFO "PID $pid does not belong to any container"
+    fi
+  done
+}
