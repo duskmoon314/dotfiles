@@ -26,19 +26,23 @@ Usage: check_gpu_pids [OPTIONS]
   local container_ids
   container_ids=$(docker ps --format '{{.ID}}')
 
-  for pid in $gpu_pids; do
-    local found_container
+  local remaining_gpu_pids=$gpu_pids
 
-    for container_id in $container_ids; do
-      if docker top "$container_id" | grep -q "$pid"; then
-        found_container=$(docker inspect --format '{{.Name}}' "$container_id" | cut -c2-)
-        INFO "PID $pid belongs to container $found_container"
-        break
+  for cid in $container_ids; do
+    local container_pids
+    container_pids=$(docker top "$cid" -eo pid | awk 'NR>1')
+    local container_name
+    container_name=$(docker inspect --format '{{.Name}}' "$cid" | cut -c2-)
+
+    for pid in $gpu_pids; do
+      if contains "$container_pids" "$pid"; then
+        INFO "PID $pid belongs to container $container_name"
+        remaining_gpu_pids=${remaining_gpu_pids//$pid/}
       fi
     done
+  done
 
-    if [ -z "$found_container" ]; then
-      INFO "PID $pid does not belong to any container"
-    fi
+  for pid in $remaining_gpu_pids; do
+    WARN "PID $pid does not belong to any container"
   done
 }
