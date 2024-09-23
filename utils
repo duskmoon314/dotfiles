@@ -74,7 +74,7 @@ as_root() {
   fi
 
   printf -v cmd_str "%q " "${cmd[@]}"
-  eval "$SHELL_CMD $cmd_str"
+  eval "$SHELL_CMD '$cmd_str'"
 }
 
 try_nonroot_first() {
@@ -92,7 +92,7 @@ command_exists() {
 # Install apps using package manager
 install_app() {
   case $OS in
-  Ubuntu | Debian)
+  ubuntu | debian)
     as_root apt-get update -qq
     as_root apt-get install -qq -y --no-install-recommends "$@"
     ;;
