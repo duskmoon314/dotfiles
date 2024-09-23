@@ -106,7 +106,7 @@ install_app() {
 # Clean after install
 clean_app() {
   case $OS in
-  Debian | Ubuntu)
+  debian | ubuntu)
     as_root apt-get autoremove --purge -y
     as_root apt-get clean
     as_root rm -rf /var/lib/apt/lists/*
