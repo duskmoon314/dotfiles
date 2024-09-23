@@ -12,7 +12,7 @@ apply_base() {
 
   if [ "$ROOT_USER" = 0 ]; then
     case $OS in
-    Debian | Ubuntu)
+    debian | ubuntu)
       install_app ca-certificates git curl wget iputils-ping iproute2
       ;;
     *)

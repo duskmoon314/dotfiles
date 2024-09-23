@@ -9,7 +9,7 @@ apply_sshd() {
 
     if [ "$ROOT_USER" = 0 ]; then
       case $OS in
-      Debian | Ubuntu)
+      debian | ubuntu)
         install_app openssh-server
         ;;
       *)

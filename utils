@@ -51,7 +51,7 @@ check_os() {
   if [ -f /etc/os-release ]; then
     # shellcheck source=/dev/null
     . /etc/os-release
-    OS="$NAME"
+    OS="$ID"
     OS_VERSION="$VERSION_ID"
   else
     OS="$(uname -s)"
@@ -68,20 +68,20 @@ as_root() {
   local cmd
   cmd=("$@")
 
-  if [ $ROOT_USER = 1 ]; then
+  if [ "$ROOT_USER" = 1 ]; then
     ERROR "Needs root. No sudo or su found"
     exit 1
   fi
 
   printf -v cmd_str "%q " "${cmd[@]}"
-  $SHELL_CMD "$cmd_str"
+  eval "$SHELL_CMD $cmd_str"
 }
 
 try_nonroot_first() {
   local cmd
   cmd=("$@")
   printf -v cmd_str '%q ' "${cmd[@]}"
-  bash -c "$cmd_str" || as_root "$cmd_str"
+  bash -c "$cmd_str" 2>/dev/null || as_root "$cmd_str"
 }
 
 # Test whether a command exists
