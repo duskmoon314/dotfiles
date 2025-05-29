@@ -1,64 +1,57 @@
 #!/bin/bash
 
-set -o pipefail
+apply_apt() {
+  echo "===== Apply apt ====="
 
-DIR=$(dirname "$0")
-. "$DIR/../utils"
+  if [ "$ROOT_USER" = 0 ]; then
+    case $OS in
+    ubuntu)
+      . /etc/os-release
 
-: "${MIRROR:=false}"
+      if dpkg-query -W -f='${Status}' ca-certificates 2>/dev/null | grep -q "ok installed"; then
+        INFO "ca-certificates is already installed"
+      else
+        install_app ca-certificates
+      fi
 
-if ! $MIRROR; then
-  echo "Skip setting apt mirror"
-  exit 0
-fi
+      if ! $MIRROR; then
+        INFO "Skip setting apt mirror"
+        return 0
+      fi
 
-set_app_ubuntu() {
-  # Backup old apt sources
-  if [ -f /etc/apt/sources.list ]; then
-    as_root cp /etc/apt/sources.list /etc/apt/sources.list.bak-"$(date +%Y%m%d%H%M%S)"
-  fi
-
-  isa=$(uname -i)
-
-  if [ "$isa" = 'x86_64' ]; then
-    as_root tee /etc/apt/sources.list <<EOF
+      INFO "Backup old apt sources"
+      if [ -f /etc/apt/sources.list ]; then
+        as_root cp /etc/apt/sources.list /etc/apt/sources.list.bak-"$(date +%Y%m%d%H%M%S)"
+      fi
+      isa=$(uname -i)
+      if [ "$isa" = 'x86_64' ]; then
+        as_root tee /etc/apt/sources.list <<EOF
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ $VERSION_CODENAME-security main restricted universe multiverse
 # deb http://security.ubuntu.com/ubuntu $VERSION_CODENAME-security main restricted universe multiverse
 EOF
-  else
-    as_root tee /etc/apt/sources.list <<EOF
+      else
+        as_root tee /etc/apt/sources.list <<EOF
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME-updates main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME-backports main restricted universe multiverse
 deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu-ports/ $VERSION_CODENAME-security main restricted universe multiverse
 # deb http://ports.ubuntu.com/ubuntu-ports $VERSION_CODENAME-security main restricted universe multiverse
 EOF
+      fi
+      ;;
+    *)
+      WARN "Unsupported OS: $OS"
+      return 1
+      ;;
+    esac
+  else
+    WARN "This script must be run as root"
+    return 1
   fi
 
-  as_root apt update -qq
 }
 
-# Install ca-certificates
-install_app ca-certificates
-
-# Check whether the distro is Debian or Ubuntu
-if [ -f /etc/os-release ]; then
-  # shellcheck source=/dev/null
-  . /etc/os-release
-  case $ID in
-  ubuntu)
-    set_app_ubuntu
-    ;;
-  debian)
-    echo "Debian is not supported yet"
-    exit 0
-    ;;
-  *)
-    echo "Unsupported distro: $ID"
-    exit 1
-    ;;
-  esac
-fi
+apply_apt

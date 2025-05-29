@@ -75,10 +75,10 @@ Commands:
       echo "$__usage"
       return 0
       ;;
-    # -m | --mirror)
-    #   MIRROR=true
-    #   shift
-    #   ;;
+    -m | --mirror)
+      MIRROR=true
+      shift
+      ;;
     -u)
       ROOT_USER=1
       shift
